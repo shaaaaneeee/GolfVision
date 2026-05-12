@@ -25,3 +25,10 @@ def test_raises_on_too_short_sequence():
     tiny = {i: {"LEFT_WRIST": {"x": 0.5, "y": 0.5, "z": 0.0, "vis": 1.0}} for i in range(5)}
     with pytest.raises(ValueError, match="too short"):
         detect_phases(tiny)
+
+
+def test_follow_through_end_is_exclusive(swing_sequence):
+    """follow_through tuple end should be one past the last frame (exclusive-end)."""
+    phases = detect_phases(swing_sequence)
+    last_frame = max(swing_sequence.keys())
+    assert phases.follow_through[1] == last_frame + 1
