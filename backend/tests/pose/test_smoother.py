@@ -35,3 +35,15 @@ def test_smoother_rejects_low_visibility_coords():
     result = smooth_landmarks(seq, alpha=0.6)
     # frame 1 low-vis spike should not propagate far
     assert result[1]["NOSE"]["x"] < 10.0
+
+def test_smoother_propagates_missing_joints():
+    """Joints missing from a frame should be carried forward from the previous frame."""
+    seq = [
+        {"NOSE": {"x": 0.5, "y": 0.3, "z": 0.0, "vis": 1.0}, "EYE": {"x": 0.4, "y": 0.2, "z": 0.0, "vis": 1.0}},
+        {"NOSE": {"x": 0.6, "y": 0.3, "z": 0.0, "vis": 1.0}},  # EYE missing
+        {"NOSE": {"x": 0.7, "y": 0.3, "z": 0.0, "vis": 1.0}},  # EYE still missing
+    ]
+    result = smooth_landmarks(seq, alpha=0.6)
+    assert "EYE" in result[1], "EYE should be carried forward to frame 1"
+    assert "EYE" in result[2], "EYE should be carried forward to frame 2"
+    assert result[1]["EYE"]["x"] == pytest.approx(0.4)  # frozen from frame 0
