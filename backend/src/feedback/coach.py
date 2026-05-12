@@ -39,11 +39,22 @@ def generate_coaching(
     prompt = build_prompt(top_fault, severity, skill_level)
 
     if client is None:
-        client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        if not api_key:
+            raise ValueError(
+                "ANTHROPIC_API_KEY environment variable is required when no client is provided"
+            )
+        client = anthropic.Anthropic(api_key=api_key)
 
-    message = client.messages.create(
-        model=MODEL,
-        max_tokens=MAX_TOKENS,
-        messages=[{"role": "user", "content": prompt}],
-    )
+    try:
+        message = client.messages.create(
+            model=MODEL,
+            max_tokens=MAX_TOKENS,
+            messages=[{"role": "user", "content": prompt}],
+        )
+    except anthropic.APIError:
+        return "Coaching service temporarily unavailable. Please try again."
+
+    if not message.content:
+        return "Coaching service returned an empty response. Please try again."
     return message.content[0].text

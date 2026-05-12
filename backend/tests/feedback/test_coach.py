@@ -52,3 +52,10 @@ def test_generate_coaching_picks_highest_severity():
     call_args = mock_client.messages.create.call_args
     prompt_text = call_args.kwargs["messages"][0]["content"]
     assert "reverse pivot" in prompt_text.lower()
+
+
+def test_generate_coaching_raises_on_missing_api_key(monkeypatch):
+    """When no client is provided and ANTHROPIC_API_KEY is absent, raise ValueError."""
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    with pytest.raises(ValueError, match="ANTHROPIC_API_KEY"):
+        generate_coaching({"early_extension": 0.5})
