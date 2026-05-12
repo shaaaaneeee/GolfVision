@@ -33,9 +33,10 @@ def address_frame():
 
 @pytest.fixture
 def top_of_backswing_frame():
+    """P5 frame: shoulder axis ~27 deg ahead of hip axis (realistic X-factor)."""
     return _frame(
-        lh_x=0.44, lh_y=0.55, rh_x=0.56, rh_y=0.55,
-        ls_x=0.35, ls_y=0.35, rs_x=0.60, rs_y=0.30,
+        lh_x=0.44, lh_y=0.55, rh_x=0.56, rh_y=0.55,  # hip axis ~0 deg
+        ls_x=0.20, ls_y=0.45, rs_x=0.70, rs_y=0.20,   # shoulder axis ~-27 deg
         lw_x=0.3,  lw_y=0.2,
     )
 

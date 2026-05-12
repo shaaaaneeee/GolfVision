@@ -22,6 +22,12 @@ def test_compute_angle_straight_line():
     assert compute_angle(a, b, c) == pytest.approx(180.0, abs=0.1)
 
 
+def test_compute_angle_degenerate_raises():
+    """Coincident points should raise ValueError, not silently return garbage."""
+    with pytest.raises(ValueError, match="Degenerate"):
+        compute_angle([0.0, 0.0], [0.0, 0.0], [1.0, 1.0])
+
+
 def test_hip_shoulder_separation_high_xfactor(top_of_backswing_frame):
     sep = hip_shoulder_separation(top_of_backswing_frame)
     assert sep > 20.0

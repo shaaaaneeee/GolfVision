@@ -6,22 +6,24 @@ def compute_angle(a: list, b: list, c: list) -> float:
     """Angle in degrees at joint b, formed by points a-b-c."""
     ba = np.array(a) - np.array(b)
     bc = np.array(c) - np.array(b)
-    cos = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc) + 1e-8)
+    norm_ba = np.linalg.norm(ba)
+    norm_bc = np.linalg.norm(bc)
+    if norm_ba < 1e-6 or norm_bc < 1e-6:
+        raise ValueError(f"Degenerate angle: points too close (norms: {norm_ba:.2e}, {norm_bc:.2e})")
+    cos = np.dot(ba, bc) / (norm_ba * norm_bc)
     return float(np.degrees(np.arccos(np.clip(cos, -1.0, 1.0))))
 
 
 def hip_shoulder_separation(frame: dict) -> float:
     """
-    X-factor: angular separation between hips and shoulders in degrees.
-    Measured as the difference between the angle from each hip joint to its
-    corresponding shoulder joint (left hip->left shoulder vs right hip->right
-    shoulder). Higher = more rotation separation = more stored power.
+    X-factor: angular difference between hip axis and shoulder axis (degrees).
+    Measures rotational separation — higher = more stored power potential.
     """
     lh, rh = frame["LEFT_HIP"], frame["RIGHT_HIP"]
     ls, rs = frame["LEFT_SHOULDER"], frame["RIGHT_SHOULDER"]
-    left_ang  = np.degrees(np.arctan2(ls["y"] - lh["y"], ls["x"] - lh["x"]))
-    right_ang = np.degrees(np.arctan2(rs["y"] - rh["y"], rs["x"] - rh["x"]))
-    return float(abs(left_ang - right_ang))
+    hip_ang = np.degrees(np.arctan2(rh["y"] - lh["y"], rh["x"] - lh["x"]))
+    sho_ang = np.degrees(np.arctan2(rs["y"] - ls["y"], rs["x"] - ls["x"]))
+    return float(abs(sho_ang - hip_ang))
 
 
 def lateral_hip_shift(frame_early: dict, frame_late: dict) -> float:
@@ -43,7 +45,8 @@ def _weight_trail_ratio(frame: dict) -> float:
     trail_x = frame["RIGHT_ANKLE"]["x"]
     lead_x  = frame["LEFT_ANKLE"]["x"]
     width = abs(trail_x - lead_x) + 1e-6
-    return float(np.clip((trail_x - hip_x) / width, 0.0, 1.0))
+    # hip_x == trail_x → 1.0 (fully trail); hip_x == lead_x → 0.0 (fully lead)
+    return float(np.clip((hip_x - lead_x) / width, 0.0, 1.0))
 
 
 def compute_swing_features(
@@ -54,6 +57,9 @@ def compute_swing_features(
     Compute the core biomechanical feature vector for a full swing.
     Returns {feature_name: float}.
     """
+    if not sequence:
+        raise ValueError("Cannot compute features from empty sequence")
+
     def nearest_frame(target: int) -> dict:
         key = min(sequence.keys(), key=lambda k: abs(k - target))
         return sequence[key]
