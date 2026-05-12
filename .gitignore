@@ -25,6 +25,7 @@ input/
 *.pth
 *.pkl
 *.pt
+*.task
 
 # IDE
 .vscode/
