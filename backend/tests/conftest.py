@@ -1,4 +1,4 @@
-import numpy as np
+from copy import deepcopy
 import pytest
 
 
@@ -42,28 +42,29 @@ def top_of_backswing_frame():
 
 @pytest.fixture
 def swing_sequence(address_frame, top_of_backswing_frame):
+    """Synthetic 30-frame golf swing: address (0-4), backswing (5-14), downswing (15-24), follow-through (25-29)."""
     frames = {}
     for i in range(5):
-        f = dict(address_frame)
+        f = deepcopy(address_frame)
         f["LEFT_WRIST"] = {"x": 0.5, "y": 0.65, "z": 0.0, "vis": 1.0}
         frames[i] = f
 
     for i in range(5, 15):
         t = (i - 5) / 9.0
         wrist_y = 0.65 - t * 0.45
-        f = dict(top_of_backswing_frame)
+        f = deepcopy(top_of_backswing_frame)
         f["LEFT_WRIST"] = {"x": 0.5 - t * 0.2, "y": wrist_y, "z": 0.0, "vis": 1.0}
         frames[i] = f
 
     for i in range(15, 25):
         t = (i - 15) / 9.0
         wrist_y = 0.20 + t * 0.50
-        f = dict(address_frame)
+        f = deepcopy(address_frame)
         f["LEFT_WRIST"] = {"x": 0.3 + t * 0.2, "y": wrist_y, "z": 0.0, "vis": 1.0}
         frames[i] = f
 
     for i in range(25, 30):
-        f = dict(address_frame)
+        f = deepcopy(address_frame)
         f["LEFT_WRIST"] = {"x": 0.7, "y": 0.3, "z": 0.0, "vis": 1.0}
         frames[i] = f
 

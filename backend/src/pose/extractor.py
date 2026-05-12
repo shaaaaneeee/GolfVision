@@ -34,23 +34,25 @@ def extract_landmarks(video_path: str) -> dict[int, dict]:
     landmarks_data: dict[int, dict] = {}
     frame_idx = 0
 
-    with _mp_pose.Pose(
-        min_detection_confidence=0.5,
-        min_tracking_confidence=0.5,
-        model_complexity=2,
-    ) as pose:
-        while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            results = pose.process(rgb)
-            parsed = parse_world_landmarks(results)
-            if parsed is not None:
-                landmarks_data[frame_idx] = parsed
-            frame_idx += 1
+    try:
+        with _mp_pose.Pose(
+            min_detection_confidence=0.5,
+            min_tracking_confidence=0.5,
+            model_complexity=2,
+        ) as pose:
+            while cap.isOpened():
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                results = pose.process(rgb)
+                parsed = parse_world_landmarks(results)
+                if parsed is not None:
+                    landmarks_data[frame_idx] = parsed
+                frame_idx += 1
+    finally:
+        cap.release()
 
-    cap.release()
     return landmarks_data
 
 
