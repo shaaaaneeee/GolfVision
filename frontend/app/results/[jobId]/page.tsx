@@ -214,12 +214,11 @@ export default function ResultsPage() {
                   <NoFaultsState />
                 ) : (
                   <div className="flex flex-col gap-3">
-                    {result.faults.map((fault, i) => (
+                    {result.faults.map((f, i) => (
                       <FaultCard
-                        key={fault.name}
-                        name={fault.name}
-                        display_name={fault.display_name}
-                        severity={fault.severity}
+                        key={f.name}
+                        fault={f.name}
+                        severity={f.severity}
                         index={i}
                       />
                     ))}

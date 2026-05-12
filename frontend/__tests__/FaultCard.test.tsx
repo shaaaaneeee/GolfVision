@@ -15,8 +15,7 @@ describe('FaultCard', () => {
   it('renders the display_name of the fault', () => {
     render(
       <FaultCard
-        name="early_extension"
-        display_name="Early Extension"
+        fault="early_extension"
         severity={0.8}
         index={0}
       />
@@ -27,8 +26,7 @@ describe('FaultCard', () => {
   it('renders severity as a percentage', () => {
     render(
       <FaultCard
-        name="reverse_pivot"
-        display_name="Reverse Pivot"
+        fault="reverse_pivot"
         severity={0.65}
         index={1}
       />
@@ -39,8 +37,7 @@ describe('FaultCard', () => {
   it('applies green color class for severity < 0.4', () => {
     render(
       <FaultCard
-        name="insufficient_x_factor"
-        display_name="Insufficient X Factor"
+        fault="insufficient_x_factor"
         severity={0.3}
         index={0}
       />
@@ -52,8 +49,7 @@ describe('FaultCard', () => {
   it('applies amber color class for severity 0.4-0.7', () => {
     render(
       <FaultCard
-        name="early_extension"
-        display_name="Early Extension"
+        fault="early_extension"
         severity={0.55}
         index={0}
       />
@@ -65,8 +61,7 @@ describe('FaultCard', () => {
   it('applies red color class for severity > 0.7', () => {
     render(
       <FaultCard
-        name="reverse_pivot"
-        display_name="Reverse Pivot"
+        fault="reverse_pivot"
         severity={0.85}
         index={0}
       />

@@ -3,10 +3,16 @@
 import { motion } from 'framer-motion'
 
 interface FaultCardProps {
-  name: string
-  display_name: string
+  fault: string
   severity: number
   index: number
+}
+
+function formatFaultName(fault: string): string {
+  return fault
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
 }
 
 function getSeverityColorClass(severity: number): string {
@@ -27,7 +33,7 @@ function getSeverityLabel(severity: number): string {
   return 'Severe'
 }
 
-export default function FaultCard({ name, display_name, severity, index }: FaultCardProps) {
+export default function FaultCard({ fault, severity, index }: FaultCardProps) {
   const pct = Math.round(severity * 100)
   const colorClass = getSeverityColorClass(severity)
   const bgClass = getSeverityBgClass(severity)
@@ -42,7 +48,7 @@ export default function FaultCard({ name, display_name, severity, index }: Fault
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-white tracking-tight">{display_name}</h3>
+        <h3 className="font-semibold text-white tracking-tight">{formatFaultName(fault)}</h3>
         <span
           className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
             severity < 0.4
