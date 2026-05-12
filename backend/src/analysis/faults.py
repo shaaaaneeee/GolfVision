@@ -8,7 +8,7 @@ FAULT_THRESHOLDS: dict[str, tuple[str, str, float]] = {
 # Distance past threshold that maps to severity 1.0 (linear scale)
 _SEVERITY_SCALE: dict[str, float] = {
     "insufficient_x_factor": 35.0,   # 0° separation → severity 1.0
-    "early_extension":        0.10,   # 0.15 shift → severity 1.0
+    "early_extension":        0.10,   # 0.05 threshold + 0.10 scale = 0.15 total shift → severity 1.0
     "reverse_pivot":          0.55,   # 0.0 weight trail → severity 1.0
 }
 
@@ -28,9 +28,9 @@ def detect_faults(features: dict[str, float]) -> dict[str, float]:
             continue
 
         if op == "<" and val < thresh:
-            raw = (thresh - val) / (_SEVERITY_SCALE[fault] + 1e-8)
+            raw = (thresh - val) / _SEVERITY_SCALE[fault]
         elif op == ">" and val > thresh:
-            raw = (val - thresh) / (_SEVERITY_SCALE[fault] + 1e-8)
+            raw = (val - thresh) / _SEVERITY_SCALE[fault]
         else:
             raw = 0.0
 
