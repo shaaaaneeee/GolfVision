@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { submitVideo, SkillLevel } from '@/lib/api'
 
+const MAX_BYTES = 50 * 1024 * 1024
+const ALLOWED_TYPES = ['video/mp4', 'video/quicktime']
+
 const SKILL_LEVELS: { value: SkillLevel; label: string }[] = [
   { value: 'beginner', label: 'Beginner' },
   { value: 'intermediate', label: 'Intermediate' },
@@ -26,6 +29,10 @@ export default function VideoUpload() {
   const [error, setError] = useState<string | null>(null)
 
   function handleFile(f: File) {
+    if (f.size > MAX_BYTES) {
+      setError('File exceeds the 50 MB limit')
+      return
+    }
     setFile(f)
     setError(null)
   }
@@ -43,7 +50,13 @@ export default function VideoUpload() {
     e.preventDefault()
     setIsDragging(false)
     const dropped = e.dataTransfer.files[0]
-    if (dropped) handleFile(dropped)
+    if (dropped) {
+      if (!ALLOWED_TYPES.includes(dropped.type)) {
+        setError('Please upload an MP4 or MOV video file')
+        return
+      }
+      handleFile(dropped)
+    }
   }
 
   function onInputChange(e: ChangeEvent<HTMLInputElement>) {

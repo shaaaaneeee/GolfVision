@@ -12,7 +12,7 @@ jest.mock('framer-motion', () => ({
 }))
 
 describe('FaultCard', () => {
-  it('renders the display_name of the fault', () => {
+  it('renders the formatted fault name', () => {
     render(
       <FaultCard
         fault="early_extension"

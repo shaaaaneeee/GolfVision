@@ -15,12 +15,6 @@ function formatFaultName(fault: string): string {
     .join(' ')
 }
 
-function getSeverityColorClass(severity: number): string {
-  if (severity < 0.4) return 'severity-low'
-  if (severity <= 0.7) return 'severity-mid'
-  return 'severity-high'
-}
-
 function getSeverityBgClass(severity: number): string {
   if (severity < 0.4) return 'bg-green-500'
   if (severity <= 0.7) return 'bg-amber-500'
@@ -35,7 +29,6 @@ function getSeverityLabel(severity: number): string {
 
 export default function FaultCard({ fault, severity, index }: FaultCardProps) {
   const pct = Math.round(severity * 100)
-  const colorClass = getSeverityColorClass(severity)
   const bgClass = getSeverityBgClass(severity)
   const label = getSeverityLabel(severity)
 
@@ -66,7 +59,7 @@ export default function FaultCard({ fault, severity, index }: FaultCardProps) {
       <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
         <motion.div
           data-testid="severity-bar"
-          className={`h-full rounded-full ${bgClass} ${colorClass}`}
+          className={`h-full rounded-full ${bgClass}`}
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
           transition={{ duration: 0.8, delay: index * 0.1 + 0.2, ease: [0.22, 1, 0.36, 1] }}

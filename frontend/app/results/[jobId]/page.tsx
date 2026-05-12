@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -124,7 +124,7 @@ export default function ResultsPage() {
     }
   }
 
-  async function fetchOnce() {
+  const fetchOnce = useCallback(async () => {
     try {
       const data = await getResult(jobId)
       setResult(data)
@@ -135,14 +135,14 @@ export default function ResultsPage() {
       setFetchError(err instanceof Error ? err.message : 'Failed to fetch result')
       stopPolling()
     }
-  }
+  }, [jobId])
 
   useEffect(() => {
     fetchOnce()
-    intervalRef.current = setInterval(fetchOnce, POLL_INTERVAL)
-    return () => stopPolling()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobId])
+    const id = setInterval(fetchOnce, POLL_INTERVAL)
+    intervalRef.current = id
+    return () => clearInterval(id)
+  }, [fetchOnce])
 
   const isLoading = !result || result.status === 'queued' || result.status === 'processing'
   const isFailed = result?.status === 'failed' || !!fetchError
