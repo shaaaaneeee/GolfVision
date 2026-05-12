@@ -1,3 +1,4 @@
+from typing import Literal
 from pydantic import BaseModel, Field
 
 
@@ -13,7 +14,7 @@ class FaultResult(BaseModel):
 
 class AnalysisResult(BaseModel):
     job_id: str
-    status: str  # "queued" | "processing" | "complete" | "failed"
+    status: Literal["queued", "processing", "complete", "failed"]
     faults: list[FaultResult] | None = None
     coaching: str | None = None
     features: dict[str, float] | None = None

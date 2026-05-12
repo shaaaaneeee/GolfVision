@@ -14,11 +14,12 @@ from api.models import AnalysisJob, AnalysisResult, FaultResult
 
 app = FastAPI(title="GolfVision API")
 
+_frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", os.getenv("FRONTEND_URL", "")],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["http://localhost:3000", _frontend_url],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "Accept"],
 )
 
 _redis = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
@@ -30,11 +31,16 @@ async def analyze(
     video: UploadFile = File(...),
     skill_level: str = Form(default="intermediate"),
 ):
+    contents = await video.read()
+    max_size = 50 * 1024 * 1024  # 50 MB
+    if len(contents) > max_size:
+        raise HTTPException(status_code=413, detail="Video file too large. Maximum size is 50MB.")
+
     job_id = str(uuid.uuid4())
 
     suffix = Path(video.filename or "swing.mp4").suffix or ".mp4"
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
-    tmp.write(await video.read())
+    tmp.write(contents)
     tmp.close()
 
     _queue.enqueue(

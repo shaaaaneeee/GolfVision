@@ -82,3 +82,34 @@ def test_result_not_found_returns_404():
         response = client.get("/result/nonexistent-job-id")
 
     assert response.status_code == 404
+
+
+def test_result_failed_returns_error():
+    client = get_client()
+    mock_job = MagicMock()
+    mock_job.is_finished = False
+    mock_job.is_failed = True
+    mock_job.exc_info = "Connection timeout: worker crash"
+
+    with patch("api.main.Job") as MockJob:
+        MockJob.fetch.return_value = mock_job
+        response = client.get("/result/failed-job-id")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "failed"
+    assert data["error"] is not None
+
+
+def test_analyze_rejects_oversized_file():
+    client = get_client()
+    # Create a fake file larger than 50MB
+    large_content = b"x" * (51 * 1024 * 1024)
+
+    response = client.post(
+        "/analyze",
+        files={"video": ("big.mp4", large_content, "video/mp4")},
+        data={"skill_level": "intermediate"},
+    )
+
+    assert response.status_code == 413
