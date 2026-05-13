@@ -1,16 +1,14 @@
 import os
 import uuid
 import tempfile
+import threading
 from pathlib import Path
 
-import redis
-from rq import Queue
-from rq.job import Job
-from rq.exceptions import NoSuchJobError
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.models import AnalysisJob, AnalysisResult, FaultResult
+from api.worker import run_analysis
 
 app = FastAPI(title="GolfVision API")
 
@@ -22,72 +20,73 @@ app.add_middleware(
     allow_headers=["Content-Type", "Accept"],
 )
 
-_redis = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
-_queue = Queue(connection=_redis)
+# In-memory job store.
+# To restore Redis/RQ: replace with redis.from_url() + rq.Queue and swap the
+# enqueue/fetch calls below back to the RQ versions.
+_jobs: dict[str, dict] = {}
+_jobs_lock = threading.Lock()
+
+
+def _process_job(job_id: str, video_path: str, skill_level: str) -> None:
+    """Runs the analysis pipeline in a background thread."""
+    try:
+        result = run_analysis(video_path, skill_level)
+        payload = {"status": "failed", "error": result["error"]} if result.get("error") else {
+            "status": "complete",
+            "faults": result.get("faults", {}),
+            "coaching": result.get("coaching", ""),
+            "features": result.get("features", {}),
+        }
+    except Exception:
+        payload = {"status": "failed", "error": "Analysis failed. Please try again."}
+    with _jobs_lock:
+        _jobs[job_id] = payload
 
 
 @app.post("/analyze", response_model=AnalysisJob)
 async def analyze(
+    background_tasks: BackgroundTasks,
     video: UploadFile = File(...),
     skill_level: str = Form(default="intermediate"),
 ):
     contents = await video.read()
-    max_size = 50 * 1024 * 1024  # 50 MB
-    if len(contents) > max_size:
+    if len(contents) > 50 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="Video file too large. Maximum size is 50MB.")
 
     job_id = str(uuid.uuid4())
-
     suffix = Path(video.filename or "swing.mp4").suffix or ".mp4"
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     tmp.write(contents)
     tmp.close()
 
-    _queue.enqueue(
-        "api.worker.run_analysis",
-        tmp.name,
-        skill_level,
-        job_id=job_id,
-        result_ttl=3600,
-    )
+    with _jobs_lock:
+        _jobs[job_id] = {"status": "processing"}
+
+    background_tasks.add_task(_process_job, job_id, tmp.name, skill_level)
     return AnalysisJob(job_id=job_id)
 
 
 @app.get("/result/{job_id}", response_model=AnalysisResult)
 def get_result(job_id: str):
-    try:
-        job = Job.fetch(job_id, connection=_redis)
-    except NoSuchJobError:
+    with _jobs_lock:
+        job = _jobs.get(job_id)
+
+    if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    if job.is_finished:
-        payload = job.result
-        if payload.get("error"):
-            return AnalysisResult(
-                job_id=job_id,
-                status="failed",
-                error=payload["error"],
-            )
-        faults = [
-            FaultResult(
-                name=k,
-                severity=v,
-            )
-            for k, v in payload["faults"].items()
-        ]
-        return AnalysisResult(
-            job_id=job_id,
-            status="complete",
-            faults=faults,
-            coaching=payload["coaching"],
-            features=payload["features"],
-        )
+    status = job["status"]
 
-    if job.is_failed:
-        return AnalysisResult(
-            job_id=job_id,
-            status="failed",
-            error="Analysis failed. Please try again.",
-        )
+    if status == "processing":
+        return AnalysisResult(job_id=job_id, status="processing")
 
-    return AnalysisResult(job_id=job_id, status="processing")
+    if status == "failed":
+        return AnalysisResult(job_id=job_id, status="failed", error=job.get("error"))
+
+    faults = [FaultResult(name=k, severity=v) for k, v in job.get("faults", {}).items()]
+    return AnalysisResult(
+        job_id=job_id,
+        status="complete",
+        faults=faults,
+        coaching=job.get("coaching"),
+        features=job.get("features"),
+    )
