@@ -299,12 +299,12 @@ export default function VideoRecorder() {
           }`}
         >
           {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-          <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
-          {/* Skeleton overlay canvas */}
+          <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: 'scaleX(-1)' }} />
+          {/* Skeleton overlay canvas — mirrored to match video */}
           <canvas
             ref={canvasRef}
             className="absolute inset-0 w-full h-full"
-            style={{ objectFit: 'cover' }}
+            style={{ objectFit: 'cover', transform: 'scaleX(-1)' }}
           />
 
           {/* Alignment grid (live only) */}
