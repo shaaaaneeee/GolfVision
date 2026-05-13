@@ -75,7 +75,6 @@ export default function VideoRecorder() {
       return
     }
 
-    // Resize canvas to match video
     if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
       canvas.width = video.videoWidth || 640
       canvas.height = video.videoHeight || 480
@@ -84,7 +83,6 @@ export default function VideoRecorder() {
     const ctx = canvas.getContext('2d')!
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    // Only process new frames
     if (video.currentTime !== lastVideoTimeRef.current) {
       lastVideoTimeRef.current = video.currentTime
       const result = landmarker.detectForVideo(video, performance.now())
@@ -92,19 +90,48 @@ export default function VideoRecorder() {
       if (result.landmarks.length > 0) {
         const { PoseLandmarker } = require('@mediapipe/tasks-vision') as typeof import('@mediapipe/tasks-vision')
 
+        // Golf-relevant connections only: torso, arms, legs — skip face & fingers
+        // Landmark indices: 11-16 = shoulders/elbows/wrists, 23-28 = hips/knees/ankles
+        const GOLF_CONNECTIONS = PoseLandmarker.POSE_CONNECTIONS.filter(
+          ({ start, end }: { start: number; end: number }) =>
+            start >= 11 && start <= 28 && end >= 11 && end <= 28
+        )
+
         for (const landmarks of result.landmarks) {
-          // Draw connectors (skeleton lines)
-          drawUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, {
-            color: 'rgba(34,197,94,0.7)',
-            lineWidth: 2,
+          // Pass 1 — wide soft glow
+          ctx.filter = 'blur(3px)'
+          drawUtils.drawConnectors(landmarks, GOLF_CONNECTIONS, {
+            color: 'rgba(34,197,94,0.55)',
+            lineWidth: 10,
           })
-          // Draw landmark dots
-          drawUtils.drawLandmarks(landmarks, {
-            color: '#ffffff',
-            fillColor: '#22c55e',
-            lineWidth: 1,
-            radius: 3,
+          ctx.filter = 'none'
+
+          // Pass 2 — crisp bright line
+          drawUtils.drawConnectors(landmarks, GOLF_CONNECTIONS, {
+            color: '#22c55e',
+            lineWidth: 3,
           })
+
+          // Joint dots — white circle with green fill, dark outline for contrast
+          drawUtils.drawLandmarks(
+            landmarks.filter((_: unknown, i: number) => i >= 11 && i <= 28),
+            {
+              color: '#000000',
+              fillColor: '#ffffff',
+              lineWidth: 2,
+              radius: 6,
+            }
+          )
+          // Inner green fill
+          drawUtils.drawLandmarks(
+            landmarks.filter((_: unknown, i: number) => i >= 11 && i <= 28),
+            {
+              color: 'transparent',
+              fillColor: '#22c55e',
+              lineWidth: 0,
+              radius: 4,
+            }
+          )
         }
       }
     }
