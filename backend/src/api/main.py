@@ -4,6 +4,9 @@ import tempfile
 import threading
 from pathlib import Path
 
+from dotenv import load_dotenv
+load_dotenv()  # reads backend/.env if present
+
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 
