@@ -1,5 +1,8 @@
+import logging
 import os
 import anthropic
+
+_logger = logging.getLogger(__name__)
 
 MODEL = "claude-sonnet-4-6"
 MAX_TOKENS = 256
@@ -53,6 +56,7 @@ def generate_coaching(
             messages=[{"role": "user", "content": prompt}],
         )
     except anthropic.APIError:
+        _logger.exception("Anthropic API call failed")
         return "Coaching service temporarily unavailable. Please try again."
 
     if not message.content:

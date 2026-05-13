@@ -9,7 +9,6 @@ class AnalysisJob(BaseModel):
 class FaultResult(BaseModel):
     name: str
     severity: float = Field(ge=0.0, le=1.0)
-    display_name: str
 
 
 class AnalysisResult(BaseModel):

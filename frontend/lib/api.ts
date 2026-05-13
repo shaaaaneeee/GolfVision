@@ -6,7 +6,6 @@ export type JobStatus = 'queued' | 'processing' | 'complete' | 'failed'
 export interface FaultResult {
   name: string
   severity: number
-  display_name: string
 }
 
 export interface AnalysisResult {

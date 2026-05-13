@@ -17,7 +17,7 @@ app = FastAPI(title="GolfVision API")
 _frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", _frontend_url],
+    allow_origins=list({_frontend_url, "http://localhost:3000"}),
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type", "Accept"],
 )
@@ -72,7 +72,6 @@ def get_result(job_id: str):
             FaultResult(
                 name=k,
                 severity=v,
-                display_name=k.replace("_", " ").title(),
             )
             for k, v in payload["faults"].items()
         ]
@@ -88,7 +87,7 @@ def get_result(job_id: str):
         return AnalysisResult(
             job_id=job_id,
             status="failed",
-            error=str(job.exc_info),
+            error="Analysis failed. Please try again.",
         )
 
     return AnalysisResult(job_id=job_id, status="processing")
